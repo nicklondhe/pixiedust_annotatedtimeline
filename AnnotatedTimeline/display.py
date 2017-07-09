@@ -18,6 +18,15 @@
 from pixiedust.display.display import Display
 from pixiedust.utils import Logger
 
+from bokeh.plotting import figure, show, output_notebook
+from bokeh.resources import CDN
+from bokeh.embed import file_html
+from bokeh.palettes import Category10
+from bokeh.models import Span, Label, Legend, LegendItem
+from bokeh.settings import settings
+
+import string
+
 @Logger()
 class AnnotatedTimelineHandler(Display):
     """
@@ -26,9 +35,60 @@ class AnnotatedTimelineHandler(Display):
     def doRender(self,handlerId):
         #TODO Add your code here
         #You can use the methods available in base Display class to construct the html markup that will be sent to the output cell
+        
+        #output_notebook()
+        workingPDF = self.entity.copy()
+        keyFields = self.options.get("keyFields")
+        valueFields = self.options.get("valueFields")
+        serValues = self.options.get("seriesValues")
+        eventField = self.options.get("eventField")
+
+        ht = self.options.get("height")
+        wdth = self.options.get("width")
+
+        fig = figure(height=int(ht), width=int(wdth))
+
+        sArr = serValues.split(",")
+        numSeries = len(sArr)
+
+        cols = Category10[numSeries]
+        i = 0
+        for s in sArr:
+            cat = workingPDF[workingPDF['name'] == s]
+            fig.line(cat[keyFields], cat[valueFields], line_width=2, color=cols[i], legend=s)
+            i = i+1
+
+        fig.legend.location = "top_left"
+        fig.legend.background_fill_color = "white"
+        fig.legend.background_fill_alpha = 0.8
+
+        lblArr = list(string.ascii_uppercase)
+        cat = workingPDF[workingPDF['name'] == eventField]
+
+        sparr = []
+        lpos = int(ht) - 30
+        i = 0
+        lits = []
+
+        for idx, row in cat.iterrows():
+            k = int(row[keyFields])
+            #self.debug("----- " + str(k) +  " : " + lblArr[i] + " -------")
+            sparr.append(Span(location=k, dimension='height', line_color='black'))
+            lbl = Label(x=k+0.1, y=lpos, y_units='screen', text=lblArr[i], render_mode='css',
+                 border_line_color='black', border_line_alpha=1.0,
+                 background_fill_color='white', background_fill_alpha=1.0)
+            fig.add_layout(lbl)
+            lits.append(LegendItem(label=lblArr[i] + " : " + row['description']))
+            i = i + 1
+
+        fig.renderers.extend(sparr)
+        fig.add_layout(Legend(items=lits, location=(0, 30)), 'right')
+
+        #show(fig)
+        html = file_html(fig, CDN)
+        self._addHTMLTemplateString(html)
 
         #Add html from a jinja2 template, the file must be located in the templates folder located under this file
-        self._addHTMLTemplate("helloWorld.html")
 
         #Note: you can embed the HTML directly in the file like so
         #self._addHTMLTemplateString("<div>Hello World</div>")
