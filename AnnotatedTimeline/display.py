@@ -25,7 +25,10 @@ from bokeh.palettes import Category10
 from bokeh.models import Span, Label, Legend, LegendItem
 from bokeh.settings import settings
 
+from bokeh.models import FuncTickFormatter    
+import datetime as dt
 import string
+import time
 
 @Logger()
 class AnnotatedTimelineHandler(Display):
@@ -46,10 +49,19 @@ class AnnotatedTimelineHandler(Display):
         ht = self.options.get("height")
         wdth = self.options.get("width")
 
+        #workingPDF[keyFields] = [dt.datetime.strptime(str(x), "%Y%m%d") for x in workingPDF[keyFields]]
         fig = figure(height=int(ht), width=int(wdth))
+        
+        fig.xaxis.formatter = FuncTickFormatter(code="""
+            s = "" + tick
+            return s.slice(4,6) + "/" + s.slice(6,8) + "/" + s.slice(0,4)
+            """)
 
         sArr = serValues.split(",")
         numSeries = len(sArr)
+
+        #fig.logo = None
+        fig.toolbar_location = None
 
         cols = Category10[numSeries]
         i = 0
@@ -83,7 +95,7 @@ class AnnotatedTimelineHandler(Display):
             i = i + 1
 
         fig.renderers.extend(sparr)
-        fig.add_layout(Legend(items=lits, location=(0, 30)), 'right')
+        fig.add_layout(Legend(items=lits, location=(0, 10)), 'right')
 
         #show(fig)
         html = file_html(fig, CDN)
