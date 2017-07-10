@@ -61,6 +61,7 @@ class AnnotatedTimelineHandler(Display):
         fig.legend.location = "top_left"
         fig.legend.background_fill_color = "white"
         fig.legend.background_fill_alpha = 0.8
+        fig.legend.click_policy = "hide"
 
         lblArr = list(string.ascii_uppercase)
         cat = workingPDF[workingPDF['name'] == eventField]
