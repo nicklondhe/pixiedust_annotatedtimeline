@@ -25,7 +25,8 @@ from bokeh.palettes import Category10
 from bokeh.models import Span, Label, Legend, LegendItem
 from bokeh.settings import settings
 
-from bokeh.models import FuncTickFormatter    
+from bokeh.models import DatetimeTickFormatter
+
 import datetime as dt
 import string
 import time
@@ -49,13 +50,10 @@ class AnnotatedTimelineHandler(Display):
         ht = self.options.get("height")
         wdth = self.options.get("width")
 
-        #workingPDF[keyFields] = [dt.datetime.strptime(str(x), "%Y%m%d") for x in workingPDF[keyFields]]
-        fig = figure(height=int(ht), width=int(wdth))
-        
-        fig.xaxis.formatter = FuncTickFormatter(code="""
-            s = "" + tick
-            return s.slice(4,6) + "/" + s.slice(6,8) + "/" + s.slice(0,4)
-            """)
+        workingPDF[keyFields] = [dt.datetime.strptime(str(x), "%Y%m%d") for x in workingPDF[keyFields]]
+        fig = figure(height=int(ht), width=int(wdth), x_axis_type="datetime")
+        fig.xaxis.formatter = DatetimeTickFormatter(days="%D")
+
 
         sArr = serValues.split(",")
         numSeries = len(sArr)
@@ -65,6 +63,7 @@ class AnnotatedTimelineHandler(Display):
 
         cols = Category10[numSeries]
         i = 0
+
         for s in sArr:
             cat = workingPDF[workingPDF['name'] == s]
             fig.line(cat[keyFields], cat[valueFields], line_width=2, color=cols[i], legend=s)
@@ -77,22 +76,29 @@ class AnnotatedTimelineHandler(Display):
 
         lblArr = list(string.ascii_uppercase)
         cat = workingPDF[workingPDF['name'] == eventField]
+        cat.sort_values([keyFields], ascending = [True], inplace=True)
 
         sparr = []
-        lpos = int(ht) - 30
         i = 0
         lits = []
 
+        spmap = {}
         for idx, row in cat.iterrows():
-            k = int(row[keyFields])
+            k = time.mktime(row[keyFields].timetuple()) * 1000
+            lpos = int(ht) - 30
+
+            if k in spmap:
+                lpos = spmap[k] - 30
+
             #self.debug("----- " + str(k) +  " : " + lblArr[i] + " -------")
             sparr.append(Span(location=k, dimension='height', line_color='black'))
-            lbl = Label(x=k+0.1, y=lpos, y_units='screen', text=lblArr[i], render_mode='css',
+            lbl = Label(x=k+10000000, y=lpos, y_units='screen', text=lblArr[i], render_mode='css',
                  border_line_color='black', border_line_alpha=1.0,
                  background_fill_color='white', background_fill_alpha=1.0)
             fig.add_layout(lbl)
             lits.append(LegendItem(label=lblArr[i] + " : " + row['description']))
             i = i + 1
+            spmap[k] = lpos
 
         fig.renderers.extend(sparr)
         fig.add_layout(Legend(items=lits, location=(0, 10)), 'right')
