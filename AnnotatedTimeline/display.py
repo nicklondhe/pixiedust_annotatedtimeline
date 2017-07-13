@@ -18,7 +18,7 @@
 from pixiedust.display.display import Display
 from pixiedust.utils import Logger
 
-from bokeh.plotting import figure, show, output_notebook
+from bokeh.plotting import figure, show
 from bokeh.resources import CDN
 from bokeh.embed import file_html
 from bokeh.palettes import Category10
@@ -26,6 +26,7 @@ from bokeh.models import Span, Label, Legend, LegendItem
 from bokeh.settings import settings
 
 from bokeh.models import DatetimeTickFormatter
+from bokeh.util.notebook import load_notebook
 
 import datetime as dt
 import string
@@ -39,7 +40,7 @@ class AnnotatedTimelineHandler(Display):
     def doRender(self,handlerId):
         #TODO Add your code here
         #You can use the methods available in base Display class to construct the html markup that will be sent to the output cell
-        
+        load_notebook(hide_banner=True)
         #output_notebook()
         workingPDF = self.entity.copy()
         keyFields = self.options.get("keyFields")
